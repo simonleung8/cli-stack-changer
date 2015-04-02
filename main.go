@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -226,7 +227,10 @@ func (cmd *StackChanger) updateAndRestart(appsObj apps.Apps, instancesObj instan
 
 	}
 	wg.Wait()
-	fmt.Printf("\033[2B")
+	if runtime.GOOS != "windows" {
+		fmt.Printf("\033[2B")
+	}
+
 	fmt.Printf("\n\n")
 }
 
@@ -240,7 +244,12 @@ func (cmd *StackChanger) printTable(allApps []apps.AppModel) {
 
 func (cmd *StackChanger) reprintTable(allApps []apps.AppModel, updatedApp string, msg string) {
 	n := len(allApps) + 1
-	fmt.Printf("\033[%dA", n)
+	if runtime.GOOS == "windows" {
+		fmt.Printf("\n\n")
+	} else {
+		fmt.Printf("\033[%dA", n)
+	}
+
 	table := terminal.NewTable(cmd.ui, []string{"name", "guid", "state"})
 	for _, a := range allApps {
 		if a.Entity.Name != updatedApp {
