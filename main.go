@@ -32,16 +32,16 @@ func (c *StackChanger) GetMetadata() plugin.PluginMetadata {
 		Commands: []plugin.Command{
 			{
 				Name:     "stack-change",
-				HelpText: "",
+				HelpText: "Update stacks for apps from lucid64 to cflinuxfs2. Restart started apps.",
 				UsageDetails: plugin.Usage{
-					Usage: "",
+					Usage: `cf stack-change [-o {org}] [-s {space}] [-p {parallel}]`,
 				},
 			},
 			{
 				Name:     "stack-list",
-				HelpText: "",
+				HelpText: "List all apps running on stack lucid64.",
 				UsageDetails: plugin.Usage{
-					Usage: "",
+					Usage: "cf stack-list [-o {org}] [-s {space}]",
 				},
 			},
 		},
