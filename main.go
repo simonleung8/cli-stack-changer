@@ -73,6 +73,9 @@ func (cmd *StackChanger) Run(cliConnection plugin.CliConnection, args []string) 
 		j := 10 //default throttle
 		if fc.IsSet("p") {
 			j = fc.Int("p")
+			if j < 1 || j > 100 {
+				cmd.ui.Failed("`-p` has to be in the range of 1 - 100")
+			}
 		}
 
 		for i < len(allApps.Resources) {
