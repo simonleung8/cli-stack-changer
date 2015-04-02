@@ -68,7 +68,6 @@ func (cmd *StackChanger) Run(cliConnection plugin.CliConnection, args []string) 
 		allApps := cmd.getApps(cliConnection, fc, appsObj)
 		cmd.ui.Say(terminal.SuccessColor("OK"))
 		cmd.ui.Say("")
-		cmd.ui.Say(fmt.Sprintf("Total %d found ...", len(allApps.Resources)))
 
 		i := 0
 		j := 10 //default throttle
@@ -80,6 +79,9 @@ func (cmd *StackChanger) Run(cliConnection plugin.CliConnection, args []string) 
 			if i+j >= len(allApps.Resources) {
 				j = len(allApps.Resources) - i
 			}
+
+			cmd.ui.Say(fmt.Sprintf("Total %d found, %d processed. Batch processing %d at a time ...", len(allApps.Resources), i, j))
+
 			cmd.updateAndRestart(appsObj, instancesObj, allApps.Resources[i:i+j])
 			i = i + j
 		}
@@ -90,11 +92,7 @@ func (cmd *StackChanger) Run(cliConnection plugin.CliConnection, args []string) 
 		cmd.ui.Say(terminal.SuccessColor("OK"))
 		cmd.ui.Say("")
 		cmd.ui.Say(fmt.Sprintf("Total %d found ...", len(allApps.Resources)))
-		table := terminal.NewTable(cmd.ui, []string{"name", "guid", "state"})
-		for _, a := range allApps.Resources {
-			table.Add(a.Entity.Name, a.Metadata.Guid, a.Entity.State)
-		}
-		table.Print()
+		cmd.printTable(allApps.Resources)
 	}
 }
 
@@ -175,10 +173,12 @@ func (cmd *StackChanger) getApps(cliConnection plugin.CliConnection, fc flags.Fl
 func (cmd *StackChanger) updateAndRestart(appsObj apps.Apps, instancesObj instances.Instances, allApps []apps.AppModel) {
 	var wg sync.WaitGroup
 
+	cmd.printTable(allApps)
+
 	for _, a := range allApps {
 		wg.Add(1)
 
-		go func(app apps.AppModel) {
+		go func(app apps.AppModel, allApps []apps.AppModel) {
 			defer wg.Done()
 			if app.Entity.State == "STARTED" {
 				err := appsObj.UpdateStackAndStopApp(app.Metadata.Guid)
@@ -186,35 +186,75 @@ func (cmd *StackChanger) updateAndRestart(appsObj apps.Apps, instancesObj instan
 					cmd.ui.Warn("Error updating stack for app '"+app.Entity.Name+"' ("+app.Metadata.Guid+")", err.Error())
 					return
 				}
-				cmd.ui.Say("App '" + app.Entity.Name + "' (" + app.Metadata.Guid + ") stack has been updated and restarting ...")
+				allApps = updateAppState(allApps, app.Entity.Name, "Updated, Restarting")
+				cmd.reprintTable(allApps, app.Entity.Name, "Updated, Restarting")
 
 				err = appsObj.RestartApp(app.Metadata.Guid)
 				if err != nil {
-					cmd.ui.Warn("Error updating stack for app '"+app.Entity.Name+"' ("+app.Metadata.Guid+")", err.Error())
+					allApps = updateAppState(allApps, app.Entity.Name, "Updated, Error Restarting")
+					cmd.reprintTable(allApps, app.Entity.Name, "Updated, Error Restarting")
 					return
 				}
 
 				err = instancesObj.IsAnyInstancesStarted(app.Metadata.Guid, 600*time.Second)
 				if err != nil {
-					cmd.ui.Warn("Timeout restarting app '" + app.Entity.Name + "' (" + app.Metadata.Guid + ") " + err.Error())
+					allApps = updateAppState(allApps, app.Entity.Name, "Updated, Timeout Restarting")
+					cmd.reprintTable(allApps, app.Entity.Name, "Updated, Timeout Restarting")
 					return
 				}
-				cmd.ui.Say(fmt.Sprintf("App '%s' (%s) restarted", app.Entity.Name, app.Metadata.Guid))
+
+				allApps = updateAppState(allApps, app.Entity.Name, "Updated, Restarted ")
+				cmd.reprintTable(allApps, app.Entity.Name, "Updated, Restarted ")
 			} else {
 				err := appsObj.UpdateStack(app.Metadata.Guid)
 				if err != nil {
 					cmd.ui.Warn("Error updating stack for app '"+app.Entity.Name+"' ("+app.Metadata.Guid+")", err.Error())
 					return
 				}
-				cmd.ui.Say("App '" + app.Entity.Name + "' (" + app.Metadata.Guid + ") stack has been updated")
-			}
 
-		}(a)
+				allApps = updateAppState(allApps, app.Entity.Name, "Updated, Done")
+				cmd.reprintTable(allApps, app.Entity.Name, "Updated, Done")
+			}
+		}(a, allApps)
 
 	}
 	wg.Wait()
+	fmt.Printf("\033[2B")
+	fmt.Printf("\n\n")
+}
+
+func (cmd *StackChanger) printTable(allApps []apps.AppModel) {
+	table := terminal.NewTable(cmd.ui, []string{"name", "guid", "state"})
+	for _, a := range allApps {
+		table.Add(a.Entity.Name, a.Metadata.Guid, a.Entity.State)
+	}
+	table.Print()
+}
+
+func (cmd *StackChanger) reprintTable(allApps []apps.AppModel, updatedApp string, msg string) {
+	n := len(allApps) + 1
+	fmt.Printf("\033[%dA", n)
+	table := terminal.NewTable(cmd.ui, []string{"name", "guid", "state"})
+	for _, a := range allApps {
+		if a.Entity.Name != updatedApp {
+			table.Add(a.Entity.Name, a.Metadata.Guid, a.Entity.State)
+		} else {
+			table.Add(updatedApp, a.Metadata.Guid, msg)
+		}
+	}
+	table.Print()
 }
 
 func (c *StackChanger) exitWithError(err error) {
 	c.ui.Failed("Error: " + err.Error())
+}
+
+func updateAppState(allApps []apps.AppModel, updatedApp string, msg string) []apps.AppModel {
+	for i, _ := range allApps {
+		if allApps[i].Entity.Name == updatedApp {
+			allApps[i].Entity.State = msg
+			return allApps
+		}
+	}
+	return allApps
 }
