@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"os/exec"
 
 	"github.com/cloudfoundry/cli/plugin"
 	"github.com/simonleung8/cli-stack-changer/stacks"
@@ -49,13 +50,15 @@ func NewApps(cliConnection plugin.CliConnection) Apps {
 }
 
 func (a *apps) UpdateStack(appGuid string) error {
+
 	s := stacks.NewStacks(a.cliCon)
 	stackGuid, err := s.GetCflinuxfs2Guid()
 	if err != nil {
 		return err
 	}
 
-	_, err = a.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/apps/"+appGuid, "-X", "PUT", `-d={"stack_guid":"`+stackGuid+`"}`)
+	// _, err = a.cliCon.CliCommand("curl", "/v2/apps/"+appGuid, "-X", "PUT", `-d={"stack_guid":"`+stackGuid+`"}`)
+	err = exec.Command("cf", "curl", "/v2/apps/"+appGuid, "-X", "PUT", `-d={"stack_guid":"`+stackGuid+`"}`).Run()
 
 	return err
 }
@@ -67,13 +70,15 @@ func (a *apps) UpdateStackAndStopApp(appGuid string) error {
 		return err
 	}
 
-	_, err = a.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/apps/"+appGuid, "-X", "PUT", `-d={"stack_guid":"`+stackGuid+`","state":"STOPPED"}`)
+	// _, err = a.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/apps/"+appGuid, "-X", "PUT", `-d={"stack_guid":"`+stackGuid+`","state":"STOPPED"}`)
+	err = exec.Command("cf", "curl", "/v2/apps/"+appGuid, "-X", "PUT", `-d={"stack_guid":"`+stackGuid+`","state":"STOPPED"}`).Run()
 
 	return err
 }
 
 func (a *apps) RestartApp(appGuid string) error {
-	_, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/apps/"+appGuid, "-X", "PUT", `-d={"state":"STARTED"}`)
+	// _, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/apps/"+appGuid, "-X", "PUT", `-d={"state":"STARTED"}`)
+	err := exec.Command("cf", "curl", "/v2/apps/"+appGuid, "-X", "PUT", `-d={"state":"STARTED"}`).Run()
 	return err
 }
 

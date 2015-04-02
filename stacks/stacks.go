@@ -3,6 +3,7 @@ package stacks
 import (
 	"encoding/json"
 	"errors"
+	"os/exec"
 
 	"github.com/cloudfoundry/cli/plugin"
 )
@@ -53,13 +54,15 @@ func (s *stacks) GetCflinuxfs2Guid() (string, error) {
 }
 
 func (s *stacks) getStackGuid(name string) (string, error) {
-	output, err := s.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/stacks")
+	// output, err := s.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/stacks")
+	output, err := exec.Command("cf", "curl", "/v2/stacks").Output()
 	if err != nil {
 		return "", err
 	}
 
 	model := StacksModel{}
-	err = json.Unmarshal([]byte(output[0]), &model)
+	// err = json.Unmarshal([]byte(output[0]), &model)
+	err = json.Unmarshal(output, &model)
 	if err != nil {
 		return "", err
 	}

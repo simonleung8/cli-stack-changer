@@ -85,7 +85,7 @@ func (cmd *StackChanger) Run(cliConnection plugin.CliConnection, args []string) 
 
 			cmd.ui.Say(fmt.Sprintf("Total %d found, %d processed. Batch processing %d at a time ...", len(allApps.Resources), i, j))
 
-			cmd.updateAndRestart(appsObj, instancesObj, allApps.Resources[i:i+j])
+			cmd.updateAndRestart(appsObj, instancesObj, allApps.Resources[i:i+j], cliConnection)
 			i = i + j
 		}
 
@@ -173,7 +173,7 @@ func (cmd *StackChanger) getApps(cliConnection plugin.CliConnection, fc flags.Fl
 	return allApps
 }
 
-func (cmd *StackChanger) updateAndRestart(appsObj apps.Apps, instancesObj instances.Instances, allApps []apps.AppModel) {
+func (cmd *StackChanger) updateAndRestart(appsObj apps.Apps, instancesObj instances.Instances, allApps []apps.AppModel, cliConnection plugin.CliConnection) {
 	var wg sync.WaitGroup
 
 	cmd.printTable(allApps)
@@ -181,12 +181,15 @@ func (cmd *StackChanger) updateAndRestart(appsObj apps.Apps, instancesObj instan
 	for _, a := range allApps {
 		wg.Add(1)
 
-		go func(app apps.AppModel, allApps []apps.AppModel) {
+		go func(app apps.AppModel, allApps []apps.AppModel, cliConnection plugin.CliConnection) {
 			defer wg.Done()
+
+			appsObj := apps.NewApps(cliConnection)
 			if app.Entity.State == "STARTED" {
 				err := appsObj.UpdateStackAndStopApp(app.Metadata.Guid)
 				if err != nil {
-					cmd.ui.Warn("Error updating stack for app '"+app.Entity.Name+"' ("+app.Metadata.Guid+")", err.Error())
+					allApps = updateAppState(allApps, app.Entity.Name, "Error Updating stack: "+err.Error())
+					cmd.reprintTable(allApps, app.Entity.Name, "Error Updating stack: "+err.Error())
 					return
 				}
 				allApps = updateAppState(allApps, app.Entity.Name, "Updated, Restarting")
@@ -211,14 +214,15 @@ func (cmd *StackChanger) updateAndRestart(appsObj apps.Apps, instancesObj instan
 			} else {
 				err := appsObj.UpdateStack(app.Metadata.Guid)
 				if err != nil {
-					cmd.ui.Warn("Error updating stack for app '"+app.Entity.Name+"' ("+app.Metadata.Guid+")", err.Error())
+					allApps = updateAppState(allApps, app.Entity.Name, "Error Updating stack: "+err.Error())
+					cmd.reprintTable(allApps, app.Entity.Name, "Error Updating stack: "+err.Error())
 					return
 				}
 
 				allApps = updateAppState(allApps, app.Entity.Name, "Updated, Done")
 				cmd.reprintTable(allApps, app.Entity.Name, "Updated, Done")
 			}
-		}(a, allApps)
+		}(a, allApps, cliConnection)
 
 	}
 	wg.Wait()
