@@ -74,5 +74,5 @@ func (s *spaces) GetSpaceGuid(fc flags.FlagContext) (string, error) {
 		}
 	}
 
-	return "", nil
+	return "", errors.New(fmt.Sprintf("Space '%s' does not exist.", fc.String("s")))
 }

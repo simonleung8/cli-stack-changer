@@ -64,8 +64,16 @@ func (cmd *StackChanger) Run(cliConnection plugin.CliConnection, args []string) 
 		cmd.exitWithError(err)
 	}
 
+	prompt := "Getting all apps with lucid64 stack"
+	if fc.IsSet("o") {
+		prompt += " in Org '" + fc.String("o") + "'"
+	}
+	if fc.IsSet("s") {
+		prompt += " and Space '" + fc.String("s") + "'"
+	}
+	cmd.ui.Say(prompt + "...")
+
 	if args[0] == "stack-change" {
-		cmd.ui.Say("Getting all apps with lucid64 stack...")
 		allApps := cmd.getApps(cliConnection, fc, appsObj)
 		cmd.ui.Say(terminal.SuccessColor("OK"))
 		cmd.ui.Say("")
@@ -91,7 +99,6 @@ func (cmd *StackChanger) Run(cliConnection plugin.CliConnection, args []string) 
 		}
 
 	} else if args[0] == "stack-list" {
-		cmd.ui.Say("Getting all apps with lucid64 stack...")
 		allApps := cmd.getApps(cliConnection, fc, appsObj)
 		cmd.ui.Say(terminal.SuccessColor("OK"))
 		cmd.ui.Say("")
@@ -154,10 +161,6 @@ func (cmd *StackChanger) getApps(cliConnection plugin.CliConnection, fc flags.Fl
 		oneOrg, err = o.GetOrg(fc.String("o"))
 		if err != nil {
 			cmd.exitWithError(err)
-		}
-
-		if oneOrg.Metadata.Guid == "" {
-			cmd.exitWithError(errors.New(fmt.Sprintf("Org %s is not found\n", fc.String("o"))))
 		}
 
 		allApps, err = a.GetLucid64AppsFromOrg(oneOrg.Metadata.Guid)

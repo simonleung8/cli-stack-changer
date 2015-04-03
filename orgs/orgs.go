@@ -2,6 +2,8 @@ package orgs
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/cloudfoundry/cli/plugin"
@@ -68,5 +70,5 @@ func (o *orgs) GetOrg(name string) (OrgModel, error) {
 		}
 	}
 
-	return OrgModel{}, err
+	return OrgModel{}, errors.New(fmt.Sprintf("Org '%s' does not exist.", name))
 }
