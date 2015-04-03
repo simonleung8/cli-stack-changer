@@ -66,10 +66,10 @@ func (cmd *StackChanger) Run(cliConnection plugin.CliConnection, args []string) 
 
 	prompt := "Getting all apps with lucid64 stack"
 	if fc.IsSet("o") {
-		prompt += " in Org '" + fc.String("o") + "'"
+		prompt += " in org " + terminal.EntityNameColor(fc.String("o"))
 	}
 	if fc.IsSet("s") {
-		prompt += " and Space '" + fc.String("s") + "'"
+		prompt += "/space " + terminal.EntityNameColor(fc.String("s"))
 	}
 	cmd.ui.Say(prompt + "...")
 

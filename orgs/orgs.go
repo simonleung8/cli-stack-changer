@@ -15,6 +15,7 @@ type Orgs interface {
 }
 
 type OrgsModel struct {
+	NextUrl   string     `json:"next_url,omitempty"`
 	Resources []OrgModel `json:"resources"`
 }
 
@@ -42,33 +43,62 @@ func NewOrgs(cliConnection plugin.CliConnection) Orgs {
 }
 
 func (o *orgs) GetAllOrgs() ([]OrgModel, error) {
-	output, err := o.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/organizations")
-	if err != nil {
-		return []OrgModel{}, err
-	}
+	allModel := []OrgModel{}
+	nextUrl := "/v2/organizations"
 
-	model := OrgsModel{}
-	err = json.Unmarshal([]byte(output[0]), &model)
-	return model.Resources, err
-}
+	for nextUrl != "" {
 
-func (o *orgs) GetOrg(name string) (OrgModel, error) {
-	output, err := o.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/organizations")
-	if err != nil {
-		return OrgModel{}, err
-	}
+		output, err := o.cliCon.CliCommandWithoutTerminalOutput("curl", nextUrl)
+		if err != nil {
+			return []OrgModel{}, err
+		}
 
-	model := OrgsModel{}
-	err = json.Unmarshal([]byte(output[0]), &model)
-	if err != nil {
-		return OrgModel{}, err
-	}
+		model := OrgsModel{}
+		err = json.Unmarshal([]byte(output[0]), &model)
+		if err != nil {
+			return []OrgModel{}, err
+		}
 
-	for _, o := range model.Resources {
-		if strings.ToLower(o.Entity.Name) == strings.ToLower(name) {
-			return o, nil
+		allModel = append(allModel, model.Resources...)
+
+		if model.NextUrl != "" {
+			nextUrl = model.NextUrl
+		} else {
+			nextUrl = ""
 		}
 	}
 
+	return allModel, nil
+}
+
+func (o *orgs) GetOrg(name string) (OrgModel, error) {
+	nextUrl := "/v2/organizations"
+
+	for nextUrl != "" {
+
+		output, err := o.cliCon.CliCommandWithoutTerminalOutput("curl", nextUrl)
+		if err != nil {
+			return OrgModel{}, err
+		}
+
+		model := OrgsModel{}
+		err = json.Unmarshal([]byte(output[0]), &model)
+		if err != nil {
+			return OrgModel{}, err
+		}
+
+		for _, o := range model.Resources {
+			if strings.ToLower(o.Entity.Name) == strings.ToLower(name) {
+				return o, nil
+			}
+		}
+
+		if model.NextUrl != "" {
+			nextUrl = model.NextUrl
+		} else {
+			nextUrl = ""
+		}
+
+	}
 	return OrgModel{}, errors.New(fmt.Sprintf("Org '%s' does not exist.", name))
 }

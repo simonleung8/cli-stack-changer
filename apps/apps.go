@@ -21,6 +21,7 @@ type Apps interface {
 }
 
 type AppsModel struct {
+	NextUrl   string     `json:"next_url,omitempty"`
 	Resources []AppModel `json:"resources"`
 }
 
@@ -83,39 +84,87 @@ func (a *apps) RestartApp(appGuid string) error {
 }
 
 func (a *apps) GetLucid64Apps() (AppsModel, error) {
-	output, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/apps")
-	if err != nil {
-		return AppsModel{}, err
+	nextUrl := "/v2/apps"
+	allApps := AppsModel{}
+
+	for nextUrl != "" {
+		output, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", nextUrl)
+		if err != nil {
+			return AppsModel{}, err
+		}
+
+		tmp := AppsModel{}
+		err = json.Unmarshal([]byte(output[0]), &tmp)
+		if err != nil {
+			return AppsModel{}, err
+		}
+
+		allApps.Resources = append(allApps.Resources, tmp.Resources...)
+
+		if tmp.NextUrl != "" {
+			nextUrl = tmp.NextUrl
+		} else {
+			nextUrl = ""
+		}
 	}
 
-	allApps := AppsModel{}
-	err = json.Unmarshal([]byte(output[0]), &allApps)
-
-	return a.filterLucid64App(allApps), err
+	return a.filterLucid64App(allApps), nil
 }
 
 func (a *apps) GetLucid64AppsFromOrg(orgGuid string) (AppsModel, error) {
-	output, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("/v2/apps?q=%s", url.QueryEscape("organization_guid:"+orgGuid)))
-	if err != nil {
-		return AppsModel{}, err
+	nextUrl := "/v2/apps"
+	allApps := AppsModel{}
+
+	for nextUrl != "" {
+		output, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("%s?q=%s", nextUrl, url.QueryEscape("organization_guid:"+orgGuid)))
+		if err != nil {
+			return AppsModel{}, err
+		}
+
+		tmp := AppsModel{}
+		err = json.Unmarshal([]byte(output[0]), &tmp)
+		if err != nil {
+			return AppsModel{}, err
+		}
+
+		allApps.Resources = append(allApps.Resources, tmp.Resources...)
+
+		if tmp.NextUrl != "" {
+			nextUrl = tmp.NextUrl
+		} else {
+			nextUrl = ""
+		}
 	}
 
-	allApps := AppsModel{}
-	err = json.Unmarshal([]byte(output[0]), &allApps)
-
-	return a.filterLucid64App(allApps), err
+	return a.filterLucid64App(allApps), nil
 }
 
 func (a *apps) GetLucid64AppsFromSpace(spaceGuid string) (AppsModel, error) {
-	output, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("/v2/apps?q=%s", url.QueryEscape("space_guid:"+spaceGuid)))
-	if err != nil {
-		return AppsModel{}, err
+	nextUrl := "/v2/apps"
+	allApps := AppsModel{}
+
+	for nextUrl != "" {
+		output, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("%s?q=%s", nextUrl, url.QueryEscape("space_guid:"+spaceGuid)))
+		if err != nil {
+			return AppsModel{}, err
+		}
+
+		tmp := AppsModel{}
+		err = json.Unmarshal([]byte(output[0]), &tmp)
+		if err != nil {
+			return AppsModel{}, err
+		}
+
+		allApps.Resources = append(allApps.Resources, tmp.Resources...)
+
+		if tmp.NextUrl != "" {
+			nextUrl = tmp.NextUrl
+		} else {
+			nextUrl = ""
+		}
 	}
 
-	allApps := AppsModel{}
-	err = json.Unmarshal([]byte(output[0]), &allApps)
-
-	return a.filterLucid64App(allApps), err
+	return a.filterLucid64App(allApps), nil
 }
 
 func (a *apps) getLucid64Guid() string {

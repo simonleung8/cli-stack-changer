@@ -16,6 +16,7 @@ type Spaces interface {
 }
 
 type SpacesModel struct {
+	NextUrl   string       `json:"next_url,omitempty"`
 	Resources []SpaceModel `json:"resources"`
 }
 
@@ -44,33 +45,43 @@ func NewSpaces(cliConnection plugin.CliConnection) Spaces {
 }
 
 func (s *spaces) GetSpaceGuid(fc flags.FlagContext) (string, error) {
-	output, err := s.cliCon.CliCommandWithoutTerminalOutput("curl", "/v2/spaces")
-	if err != nil {
-		return "", err
-	}
+	nextUrl := "/v2/spaces"
 
-	model := SpacesModel{}
-	err = json.Unmarshal([]byte(output[0]), &model)
-	if err != nil {
-		return "", err
-	}
+	for nextUrl != "" {
+		output, err := s.cliCon.CliCommandWithoutTerminalOutput("curl", nextUrl)
+		if err != nil {
+			return "", err
+		}
 
-	for _, space := range model.Resources {
-		if strings.ToLower(space.Entity.Name) == strings.ToLower(fc.String("s")) {
-			orgObj := orgs.NewOrgs(s.cliCon)
-			org, err := orgObj.GetOrg(fc.String("o"))
-			if err != nil {
-				return "", err
+		model := SpacesModel{}
+		err = json.Unmarshal([]byte(output[0]), &model)
+		if err != nil {
+			return "", err
+		}
+
+		for _, space := range model.Resources {
+			if strings.ToLower(space.Entity.Name) == strings.ToLower(fc.String("s")) {
+				orgObj := orgs.NewOrgs(s.cliCon)
+				org, err := orgObj.GetOrg(fc.String("o"))
+				if err != nil {
+					return "", err
+				}
+
+				if org.Metadata.Guid == "" {
+					return "", errors.New(fmt.Sprintf("Organization '%s' does not exist", fc.String("o")))
+				}
+
+				if space.Entity.OrganizationGuid != org.Metadata.Guid {
+					return "", errors.New(fmt.Sprintf("Space '%s' does not belong to Organization '%s'", space.Entity.Name, org.Entity.Name))
+				}
+				return space.Metadata.Guid, nil
 			}
+		}
 
-			if org.Metadata.Guid == "" {
-				return "", errors.New(fmt.Sprintf("Organization '%s' does not exist", fc.String("o")))
-			}
-
-			if space.Entity.OrganizationGuid != org.Metadata.Guid {
-				return "", errors.New(fmt.Sprintf("Space '%s' does not belong to Organization '%s'", space.Entity.Name, org.Entity.Name))
-			}
-			return space.Metadata.Guid, nil
+		if model.NextUrl != "" {
+			nextUrl = model.NextUrl
+		} else {
+			nextUrl = ""
 		}
 	}
 
