@@ -112,11 +112,11 @@ func (a *apps) GetLucid64Apps() (AppsModel, error) {
 }
 
 func (a *apps) GetLucid64AppsFromOrg(orgGuid string) (AppsModel, error) {
-	nextUrl := "/v2/apps"
+	nextUrl := fmt.Sprintf("/v2/apps?q=%s", url.QueryEscape("organization_guid:"+orgGuid))
 	allApps := AppsModel{}
 
 	for nextUrl != "" {
-		output, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("%s?q=%s", nextUrl, url.QueryEscape("organization_guid:"+orgGuid)))
+		output, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", nextUrl)
 		if err != nil {
 			return AppsModel{}, err
 		}
@@ -140,11 +140,11 @@ func (a *apps) GetLucid64AppsFromOrg(orgGuid string) (AppsModel, error) {
 }
 
 func (a *apps) GetLucid64AppsFromSpace(spaceGuid string) (AppsModel, error) {
-	nextUrl := "/v2/apps"
+	nextUrl := fmt.Sprintf("/v2/apps?q=%s", url.QueryEscape("space_guid:"+spaceGuid))
 	allApps := AppsModel{}
 
 	for nextUrl != "" {
-		output, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("%s?q=%s", nextUrl, url.QueryEscape("space_guid:"+spaceGuid)))
+		output, err := a.cliCon.CliCommandWithoutTerminalOutput("curl", nextUrl)
 		if err != nil {
 			return AppsModel{}, err
 		}
