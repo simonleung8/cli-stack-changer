@@ -7,7 +7,7 @@ This plugin can be used to view and update applications running on the outdated 
 #####Install from Repo (v.6.10.0+)
   ```
   $ cf add-plugin-repo CF-Community http://plugins.cloudfoundry.org/
-  $ cf install-plugin Stack-Changer -r CF-Community
+  $ cf install-plugin "Stack Changer" -r CF-Community
   ```
 #####Install from Url (v.6.8.0+)
 OSX
