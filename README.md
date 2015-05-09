@@ -12,24 +12,24 @@ This plugin can be used to view and update applications running on the outdated 
 #####Install from Url (v.6.8.0+)
 OSX
   ```
-  cf install-plugin https://github.com/simonleung8/cli-stack-changer/raw/master/bin/osx/cli-stack-changer
+  cf install-plugin https://github.com/simonleung8/cli-stack-changer/raw/master/bin/osx/cli-stack-changer_darwin_amd64
   ```
 
 linux64:
   ```
-  cf install-plugin https://github.com/simonleung8/cli-stack-changer/raw/master/bin/linux64/cli-stack-changer
+  cf install-plugin https://github.com/simonleung8/cli-stack-changer/raw/master/bin/linux64/cli-stack-changer_linux_amd64
   ```
 
 windows64:
   ```
-  cf install-plugin https://github.com/simonleung8/cli-stack-changer/raw/master/bin/win64/cli-stack-changer
+  cf install-plugin https://github.com/simonleung8/cli-stack-changer/raw/master/bin/win64/cli-stack-changer_windows_amd64.exe
   ```
 
 
 #####Install from Binary file (v.6.7.0)
 
 
-- Download the binary [`win64`](https://github.com/simonleung8/cli-stack-changer/raw/master/bin/win64/cli-stack-changer) [`linux64`](https://github.com/simonleung8/cli-stack-changer/raw/master/bin/linux64/cli-stack-changer) [`osx`](https://github.com/simonleung8/cli-stack-changer/raw/master/bin/osx/cli-stack-changer)
+- Download the binary [`win64`](https://github.com/simonleung8/cli-stack-changer/raw/master/bin/win64/cli-stack-changer_windows_amd64.exe) [`linux64`](https://github.com/simonleung8/cli-stack-changer/raw/master/bin/linux64/cli-stack-changer_linux_amd64) [`osx`](https://github.com/simonleung8/cli-stack-changer/raw/master/bin/osx/cli-stack-changer_darwin_amd64)
 - Install plugin `$ cf install-plugin <binary_name>`
   
 ##Full Command List
