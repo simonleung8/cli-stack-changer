@@ -27,7 +27,7 @@ func (c *StackChanger) GetMetadata() plugin.PluginMetadata {
 		Name: "Stack-Changer",
 		Version: plugin.VersionType{
 			Major: 1,
-			Minor: 0,
+			Minor: 1,
 			Build: 0,
 		},
 		Commands: []plugin.Command{

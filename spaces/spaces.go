@@ -45,6 +45,7 @@ func NewSpaces(cliConnection plugin.CliConnection) Spaces {
 }
 
 func (s *spaces) GetSpaceGuid(fc flags.FlagContext) (string, error) {
+	var spaceExists bool
 	nextUrl := "/v2/spaces"
 
 	for nextUrl != "" {
@@ -61,6 +62,7 @@ func (s *spaces) GetSpaceGuid(fc flags.FlagContext) (string, error) {
 
 		for _, space := range model.Resources {
 			if strings.ToLower(space.Entity.Name) == strings.ToLower(fc.String("s")) {
+				spaceExists = true
 				orgObj := orgs.NewOrgs(s.cliCon)
 				org, err := orgObj.GetOrg(fc.String("o"))
 				if err != nil {
@@ -71,10 +73,9 @@ func (s *spaces) GetSpaceGuid(fc flags.FlagContext) (string, error) {
 					return "", errors.New(fmt.Sprintf("Organization '%s' does not exist", fc.String("o")))
 				}
 
-				if space.Entity.OrganizationGuid != org.Metadata.Guid {
-					return "", errors.New(fmt.Sprintf("Space '%s' does not belong to Organization '%s'", space.Entity.Name, org.Entity.Name))
+				if space.Entity.OrganizationGuid == org.Metadata.Guid {
+					return space.Metadata.Guid, nil
 				}
-				return space.Metadata.Guid, nil
 			}
 		}
 
@@ -83,6 +84,10 @@ func (s *spaces) GetSpaceGuid(fc flags.FlagContext) (string, error) {
 		} else {
 			nextUrl = ""
 		}
+	}
+
+	if spaceExists {
+		return "", errors.New(fmt.Sprintf("Space '%s' does not belong to Organization '%s'", fc.String("s"), fc.String("o")))
 	}
 
 	return "", errors.New(fmt.Sprintf("Space '%s' does not exist.", fc.String("s")))
