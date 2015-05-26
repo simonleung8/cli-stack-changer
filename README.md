@@ -36,8 +36,8 @@ windows64:
 
 | command | usage | description|
 | :--------------- |:---------------| :------------|
-|`stack-change`| `cf stack-change App_Name` |Update stacks for apps from lucid64 to cflinuxfs2. Restart started apps.<br><br>Options:<br>`-o`: organization<br>`-s`: space<br>`-p`: # of concurrent threads in a batch|
-|`stack-list`| `cf stack-list App_Name` |List all apps running on stack lucid64.<br><br>Options:<br>`-o`: organization<br>`-s`: space|
+|`stack-change`| `cf stack-change [-o -s -p]` |Update stacks for apps from lucid64 to cflinuxfs2. Restart started apps.<br><br>Options:<br>`-o`: organization<br>`-s`: space<br>`-p`: # of concurrent threads in a batch|
+|`stack-list`| `cf stack-list [-o -s -p]` |List all apps running on stack lucid64.<br><br>Options:<br>`-o`: organization<br>`-s`: space|
 
 
 
